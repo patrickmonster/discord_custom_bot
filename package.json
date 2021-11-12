@@ -1,10 +1,18 @@
 {
   "name": "discord_custom_bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "link-module-alias"
+  },
+  "_moduleAliases": {
+    "#home": "./",
+    "#event": "./event",
+    "#button": "./command/button",
+    "#models": "./models",
+    "#menu": "./command/menu"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +22,10 @@
     "dotenv": "^10.0.0",
     "mysql2": "^2.3.3-rc.0",
     "sequelize": "^6.9.0",
-    "sequelize-auto": "^0.8.5"
+    "sequelize-auto": "^0.8.5",
+    "sequelize-cli": "^6.3.0"
+  },
+  "devDependencies": {
+    "link-module-alias": "^1.2.0"
   }
 }

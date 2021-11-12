@@ -1,0 +1,3 @@
+npx sequelize db:migrate --env development
+
+npx sequelize model:create --name bot_token --attributes "user_id:integer,display_name:text"

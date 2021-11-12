@@ -1,4 +1,3 @@
-const bt_init = require('#button/init');
 
 module.exports = function(message) {
 	const { content, author, client, channel } = message;

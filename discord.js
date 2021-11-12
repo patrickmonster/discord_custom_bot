@@ -1,104 +1,73 @@
 'use strict';
-require('dotenv').config();
 
 const { Client, Intents } = require('discord.js');
 
+const { sequelize } = require("#models");
 
 const getCommands = require('./lib/getCommands'); // 커맨드 관리자
 
-// const isDebug = process.argv.slice(2).length;
+function getQuerySelect(query, ...replacements) { return getQuery("SELECT", query, ...replacements)}
+function getQuery(type = "SELECT", query, ...replacements){
+	return sequelize.query(query, { replacements, type: sequelize.QueryTypes[type] });
+}
 
-const client = new Client({ intents: [ /*Intents.FLAGS.DIRECT_MESSAGES,*/ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-client.on('debug', function(info) {
+function debug(info) {
 	if (info.includes('Exceeded identify threshold')) {
 		const time = info.split(' ').pop();
-		console.log('error', '디스코드 서비스 연결 문제', getMessage({ title: '연결 지연중...', main: time }));
+		log[1]('디스코드 서비스 연결 문제', '연결 지연중...', time );
 	}
 	else if (info.includes('Session Limit Information')) {
-		console.log('error', 'Session Limit Information', getMessage({ title: '세션 제한 (잔여 연결수)', main: info.replace('[WS => Manager] Session Limit Information', '') }));
+		log[0]('Session Limit Information', "세션 제한 (잔여 연결수)", info.replace('[WS => Manager] Session Limit Information', ''));
 	}
 	else if (info.includes('[DESTORY]') || info.includes('[CONNECT]')) {
-		console.log(new Date(), info);
+		log[0](new Date(), info);
 	}
-});
+}
 
-client.on('error', function(e) {
+function ready(){
+	[client._log,client._err,client._logs] = log;
+	
+	log[0](`starting live service.... ${new Date()}`);
+	log[0](`Logged in as ${client.user.tag}!`);
+	
+	client._log(`${client.guilds.cache.size}개의 그룹과 함께`);
+	// 프로세서 기본 정보를 불러옴
+}
 
-});
-
+function interaction(interaction) {
+	if (!interaction.inGuild()) return;
+	if(interaction.isButton()) clickButton(interaction);
+	if(interaction.isSelectMenu()) clickMenu(interaction);
+}
 // ////////////////////////////////////////////////////////////////////////////////////////////////
+const [idx] = process.argv.slice(2);
 
+const log = require('./lib/logManager')(idx);
 
+let client;
 
-client.system_message = getCommands(`${__dirname}/command/message`);
-client.system_cmd = getCommands(`${__dirname}/command/system`);
-// client.system_bt = getCommands(`${__dirname}/command/button`);
-// client.system_mu = getCommands(`${__dirname}/command/menu`);
+// process.argv.slice(2)
+getQuerySelect("select name from recvie_intent where idx = ?", idx).then(intent_s=>{
+	const intents = intent_s.map(({name})=>Intents.FLAGS[name]);
+	client = new Client({ intents });
 
-client.command_mansion = require('#mansion/mansion');
+	client.system_cmd = getCommands(`${__dirname}/command/system`);
+	client.resetCompCmd = require('#event/init')(client);
+	
+	client.on('shardError', require('#event/shardError'));
+	client.on('interactionCreate', interaction);
+	client.on('debug', debug);
+	client.on('ready', ready);
 
-client.witelist = [];
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-client.once('ready', () => {
-	console.log(`starting live service.... ${new Date()}`);
-	console.log(`Logged in as ${client.user.tag}!`);
-	client.setActivityProfile(`${client.guilds.cache.size}개의 그룹과 함께`, 'PLAYING', 0);
-});
-
-
-const message = require('#event/message');
-const clickButton = require('#event/clickButton');
-const clickMenu = require('#event/clickMenu');
-
-const guildCreate = require('#event/guildCreate');
-const guildDelete = require('#event/guildDelete');
-
-const channelDelete = require('#event/channelDelete');
-
-const shardError = require('#event/shardError');
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-client.on('messageCreate', message);
-
-// 상호작용 - 버튼이벤트
-client.on('interactionCreate', function(interaction) {
-	if (!interaction.inGuild() || !interaction.isButton()) return;
-	clickButton(interaction);
-});
-// 상호작용 - 보조 매뉴 이벤트
-client.on('interactionCreate', function(interaction) {
-	if (!interaction.inGuild() || !interaction.isSelectMenu()) return;
-	// const { type, id, applicationId, channelId, guildId, user, member, version, message, customId, componentType, deferred, ephemeral, replied, webhook, values } = interaction;
-	console.log('click menu');
-	clickMenu(interaction);
-});
-
-client.on('shardError', shardError);
-
-client.on('channelDelete', channelDelete);
-
-client.on('guildCreate', guildCreate);
-client.on('guildDelete', guildDelete);
-// ///////////////////////////////////////////////////////////////////////////////////////////
-
-process.on('unhandledRejection', error => {
-	console.error(error);
-	console.log('error', 'unhandledRejection', getMessage({ title: '프로세서 에러', main: `${error}` }));
-});
-
-console.log(process.env.DISCORD_TOKEN_TEST);
-client.login(isDebug ? process.env.DISCORD_TOKEN_TEST : process.env.DISCORD_TOKEN).catch(e => {
+	client._getQuery = getQuery;
+	
+	return getQuerySelect("select name from recive_event where idx = ?", idx);
+}).then(event_s=>{
+	for(const { name } of event_s) client.on(name, require(`#event/${name}`));// 이벤트 등록
+	return client.login(process.env.DISCORD_TOKEN);
+}).then(o=>{
+	console.log(`[샤드]클라이언트가 성공적으로 구성됨`,o.slice(0,15));
+}).catch(e=>{
 	console.error(e);
-	console.log('error', '디스코드 컨넥션 에러', getMessage({ title: 'Client login error', main: `채널 로그인 에러${e}` }));
 });
-
-process.on('SIGINT', function() {
-	console.error(`=============================${process.pid}번 프로세서가 종료됨=============================`);
-	process.exit();
-});
+// ////////////////////////////////////////////////////////////////////////////////////////////////

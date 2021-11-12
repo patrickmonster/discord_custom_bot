@@ -2,8 +2,7 @@ const SequelizeAuto = require('sequelize-auto');
 
 require('dotenv').config();
 // const env = process.env.NODE_ENV && "development";
-const config = require('./config/config.json');
-
+const config = require('./config/config.json')[process.env.NODE_ENV];
 
 const auto = new SequelizeAuto(config.database, config.username, config.password, {
 	host: config.host,
