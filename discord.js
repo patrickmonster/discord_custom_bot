@@ -8,7 +8,7 @@ const getCommands = require('./lib/getCommands'); // 커맨드 관리자
 
 function getQuerySelect(query, ...replacements) { return getQuery("SELECT", query, ...replacements)}
 function getQuery(type = "SELECT", query, ...replacements){
-	return sequelize.query(query, { replacements, type: sequelize.QueryTypes[type] });
+	return sequelize.query(`${type} ${query}`, { replacements, type: sequelize.QueryTypes[type] });
 }
 
 function debug(info) {
@@ -47,7 +47,7 @@ const log = require('./lib/logManager')(idx);
 let client;
 
 // process.argv.slice(2)
-getQuerySelect("select name from recvie_intent where idx = ?", idx).then(intent_s=>{
+getQuerySelect("name from recvie_intent where idx = ?", idx).then(intent_s=>{
 	const intents = intent_s.map(({name})=>Intents.FLAGS[name]);
 	client = new Client({ intents });
 
@@ -61,7 +61,7 @@ getQuerySelect("select name from recvie_intent where idx = ?", idx).then(intent_
 
 	client._getQuery = getQuery;
 	
-	return getQuerySelect("select name from recive_event where idx = ?", idx);
+	return getQuerySelect("name from recive_event where idx = ?", idx);
 }).then(event_s=>{
 	for(const { name } of event_s) client.on(name, require(`#event/${name}`));// 이벤트 등록
 	return client.login(process.env.DISCORD_TOKEN);
