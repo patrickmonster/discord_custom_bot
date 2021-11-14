@@ -75,12 +75,7 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	client._getQuery = getQuery;
 	client._idx = idx;
 	
-	return getQuerySelect("name from recive_event where idx = ?", idx);
-}).then(event_s=>{
-	client._permiss = [];
-	for(const { name } of event_s) {
-		client._permiss.push(name);
-	}
+	// return getQuerySelect("name from recive_event where idx = ?", idx);
 	return client.login(process.env.DISCORD_TOKEN);
 }).then(o=>{
 	log[0](`[샤드]클라이언트가 성공적으로 구성됨`,o.slice(0,15), client._permiss);
