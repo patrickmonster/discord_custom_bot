@@ -24,6 +24,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(100),
       allowNull: true,
       unique: "token_UN"
+    },
+    use_yn: {
+      type: DataTypes.STRING(1),
+      allowNull: true,
+      defaultValue: "Y"
     }
   }, {
     sequelize,

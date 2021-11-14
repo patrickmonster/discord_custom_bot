@@ -1,10 +1,21 @@
 'use strict';
+const [idx, name] = process.argv.slice(2);
 
 const { Client, Intents } = require('discord.js');
 
 const { sequelize } = require("#models");
 
 const getCommands = require('./lib/getCommands'); // 커맨드 관리자
+
+
+const messageCreate = require('#event/messageCreate');
+const clickButton = require('#event/clickButton');
+const clickMenu = require('#event/clickMenu');
+
+const guildCreate = require('#event/guildCreate');
+const guildDelete = require('#event/guildDelete');
+
+const log = require('#home/lib/logManager')(`${idx}|${name}`);
 
 function getQuerySelect(query, ...replacements) { return getQuery("SELECT", query, ...replacements)}
 function getQuery(type = "SELECT", query, ...replacements){
@@ -40,33 +51,39 @@ function interaction(interaction) {
 	if(interaction.isSelectMenu()) clickMenu(interaction);
 }
 // ////////////////////////////////////////////////////////////////////////////////////////////////
-const [idx] = process.argv.slice(2);
-
-const log = require('./lib/logManager')(idx);
 
 let client;
 
 // process.argv.slice(2)
-getQuerySelect("name from recvie_intent where idx = ?", idx).then(intent_s=>{
+getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	const intents = intent_s.map(({name})=>Intents.FLAGS[name]);
 	client = new Client({ intents });
 
 	client.system_cmd = getCommands(`${__dirname}/command/system`);
-	client.resetCompCmd = require('#event/init')(client);
+	client.resetCompCmd = require('#home/init')(client);
 	
 	client.on('shardError', require('#event/shardError'));
 	client.on('interactionCreate', interaction);
+
 	client.on('debug', debug);
 	client.on('ready', ready);
+	
+	client.on('messageCreate', messageCreate);
+	client.on('guildCreate', guildCreate);
+	client.on('guildDelete', guildDelete);
 
 	client._getQuery = getQuery;
+	client._idx = idx;
 	
 	return getQuerySelect("name from recive_event where idx = ?", idx);
 }).then(event_s=>{
-	for(const { name } of event_s) client.on(name, require(`#event/${name}`));// 이벤트 등록
+	client._permiss = [];
+	for(const { name } of event_s) {
+		client._permiss.push(name);
+	}
 	return client.login(process.env.DISCORD_TOKEN);
 }).then(o=>{
-	console.log(`[샤드]클라이언트가 성공적으로 구성됨`,o.slice(0,15));
+	log[0](`[샤드]클라이언트가 성공적으로 구성됨`,o.slice(0,15), client._permiss);
 }).catch(e=>{
 	console.error(e);
 });

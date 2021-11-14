@@ -1,3 +1,4 @@
+// const { sequelize } = require("#models");
 
 module.exports = function(message) {
 	const { content, author, client, channel } = message;
@@ -9,6 +10,9 @@ module.exports = function(message) {
 	}else{
 		// client.system_message?.get(command)?.execute()
 		// eval() -> 실행문 삽입
+		// client._getQuery("SELECT","")
 	}
-
 };
+
+/*
+*/

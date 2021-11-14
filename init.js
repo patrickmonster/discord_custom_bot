@@ -12,7 +12,7 @@ function nocache(module, callback) {
 		});
 }
 
-const target = `${__dirname}/base`;
+const target = `${__dirname}/shard`;
 
 /**
  * 컴포넌트 호출 관리자
@@ -21,7 +21,7 @@ const target = `${__dirname}/base`;
  */
 function load(client, target) {
 	try {
-		console.log(`[파일관리자] 파일등록- ${target}`);
+		console.log(`[샤드관리자] 파일등록- ${target}`);
 		const { name, excute } = require(target);
 		client[name] = function(...arges) {
 			try {
@@ -31,7 +31,7 @@ function load(client, target) {
 		};
 	}
 	catch (e) {
-		console.log(`[파일관리자] 파일제거(경고)- ${target}`);
+		console.log(`[샤드관리자] 파일제거(경고)- ${target}`);
 	}
 }
 
@@ -46,7 +46,7 @@ module.exports = function(client) {
 			});
 		}
 		catch (e) {
-			console.log(`[파일관리자]잘못된 정의 - ${path}`);
+			console.log(`[샤드관리자]잘못된 정의 - ${path}`);
 		}
 	}
 

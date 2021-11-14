@@ -22,15 +22,15 @@ console.log(`
                                                                                     
  """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 `);
-console.error(`=============================================[${new Date()}]========================================`);
+console.error(`========================[${new Date()}]========================`);
 
 // 샤딩 메니져
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-function createShard({ idx, token, owner, memo, tag }, shardArgs = []){// 샤드 인스턴스 생성
+function createShard({ idx, token, owner, memo, tag }){// 샤드 인스턴스 생성
     const manager = new ShardingManager('./discord.js', {
         totalShards: 'auto',
-        shardArgs,
+        shardArgs : [idx, tag],
         // token: process.env.DISCORD_TOKEN,
         token, respawn: true,
     });
@@ -51,9 +51,9 @@ function createShard({ idx, token, owner, memo, tag }, shardArgs = []){// 샤드
 
 
 const manager_list = {};
-sequelize.query(`select * from dbtwitch.token;`, {type: sequelize.QueryTypes.SELECT}).then((bots)=>{
+sequelize.query(`SELECT * FROM dbtwitch.token WHERE use_yn = 'Y'`, {type: sequelize.QueryTypes.SELECT}).then((bots)=>{
     for ( const bot of bots){
-        manager_list[bot.idx] = createShard(bot, [bot.idx]);
+        manager_list[bot.idx] = createShard(bot);
     }
 });
 
@@ -61,6 +61,10 @@ sequelize.query(`select * from dbtwitch.token;`, {type: sequelize.QueryTypes.SEL
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 알림 서비스
 process.on('SIGINT', function() {
-    //
+    for (const [k, manager] of Object.entries(manager_list)){
+        manager.shards.forEach(shard=>shard.kill(1));
+        console.log(`[Kill]${k}`);
+    }
     console.log("샤드 다운");
+    process.exit(1);
 });
