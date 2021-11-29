@@ -1,7 +1,8 @@
 'use strict';
 const [idx, name] = process.argv.slice(2);
 
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, ConstantsEvents } = require('discord.js');
+const {} = require('discord.js/src/client/actions/GuildStickersUpdate');
 
 const { sequelize } = require("#models");
 
@@ -28,7 +29,7 @@ function debug(info) {
 		log[1]('디스코드 서비스 연결 문제', '연결 지연중...', time );
 	}
 	else if (info.includes('Session Limit Information')) {
-		log[0]('Session Limit Information', "세션 제한 (잔여 연결수)", info.replace('[WS => Manager] Session Limit Information', ''));
+		log[0]('Session Limit Information', "세션 제한 (잔여 연결수)"	, info.replace('[WS => Manager] Session Limit Information', ''));
 	}
 	else if (info.includes('[DESTORY]') || info.includes('[CONNECT]')) {
 		log[0](new Date(), info);
@@ -42,7 +43,6 @@ function ready(){
 	log[0](`Logged in as ${client.user.tag}!`);
 	
 	client._log(`${client.guilds.cache.size}개의 그룹과 함께`);
-	// 프로세서 기본 정보를 불러옴
 }
 
 function interaction(interaction) {

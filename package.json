@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "link-module-alias"
+    "postinstall": "link-module-alias",
+    "doc": "jsdoc -c jsdoc.json"
   },
   "_moduleAliases": {
     "#home": "./",
@@ -26,6 +27,7 @@
     "sequelize-cli": "^6.3.0"
   },
   "devDependencies": {
+    "jsdoc": "^3.6.7",
     "link-module-alias": "^1.2.0"
   }
 }
