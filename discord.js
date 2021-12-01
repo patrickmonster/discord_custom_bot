@@ -129,7 +129,7 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	optionType : "subcommand" | "boolean" | "user" | "channel" | "rule" | "mention" | "string" | "int" | "number",
 	use_yn : "Y", // 사용여부
 	use_cmd : "Y", // 커맨드 명령?
-	optionParent : "", // 부모요소
+	parent_idx : "", // 부모요소
 	exec(){// 실행명령
 
 	}
