@@ -13,6 +13,7 @@
     "#event": "./event",
     "#button": "./command/button",
     "#models": "./models",
+    "#lib": "./lib",
     "#menu": "./command/menu"
   },
   "keywords": [],

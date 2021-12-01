@@ -2,6 +2,8 @@ require('dotenv').config();
 const { ShardingManager } = require('discord.js');
 const setting = require('./package.json');
 
+const logger = require('#lib/logger');
+
 const { sequelize } = require("#models")
 // process.setMaxListeners(0);
 
@@ -11,7 +13,7 @@ console.log(`
 ██╔════╝██║██╔══██╗██╔════╝╚══██╔══╝                                                
 █████╗  ██║██████╔╝███████╗   ██║                                                   
 ██╔══╝  ██║██╔══██╗╚════██║   ██║                            Ver.${setting.version} 
-██║     ██║██║  ██║███████║   ██║                            create by.patrick      
+██║     ██║██║  ██║███████║   ██║                          create by.patrickMonster
 ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝  _03                                              
  ██████╗██╗   ██╗███████╗████████╗ ██████╗ ███╗   ███╗    ██████╗  ██████╗ ████████╗
 ██╔════╝██║   ██║██╔════╝╚══██╔══╝██╔═══██╗████╗ ████║    ██╔══██╗██╔═══██╗╚══██╔══╝
@@ -27,21 +29,17 @@ console.error(`========================[${new Date()}]========================`)
 // 샤딩 메니져
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-function createShard({ idx, token, owner, memo, tag }){// 샤드 인스턴스 생성
+function createShard({ idx, token, owner, memo, tag, log_level }){// 샤드 인스턴스 생성
     const manager = new ShardingManager('./discord.js', {
         totalShards: 'auto',
-        shardArgs : [idx, tag],
-        // token: process.env.DISCORD_TOKEN,
+        shardArgs : [idx, log_level, tag],
         token, respawn: true,
     });
 
-    manager.on('shardCreate', shard => {
-        console.log(`[${tag}]샤딩 생성`, shard.id);
-    });
+    manager.on('shardCreate', shard => { console.log(`[${tag}]샤딩 생성`, shard.id); });
     manager.spawn(manager.totalShards, 5500, -1).then(shards => {
         shards.forEach(shard => {
             shard.on('message', message => {
-                // onShardMessage(message);
                 console.log(message);
             });
         });

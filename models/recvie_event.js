@@ -1,13 +1,9 @@
 const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('recvie_intent', {
+  return sequelize.define('recvie_event', {
     idx: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'token',
-        key: 'idx'
-      }
+      allowNull: false
     },
     name: {
       type: DataTypes.STRING(100),
@@ -20,11 +16,11 @@ module.exports = function(sequelize, DataTypes) {
     }
   }, {
     sequelize,
-    tableName: 'recvie_intent',
+    tableName: 'recvie_event',
     timestamps: false,
     indexes: [
       {
-        name: "recvie_intent_idx_IDX",
+        name: "recvie_event_idx_IDX",
         using: "BTREE",
         fields: [
           { name: "idx" },

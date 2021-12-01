@@ -29,6 +29,17 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(1),
       allowNull: true,
       defaultValue: "Y"
+    },
+    log_level: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 3,
+      comment: "로그 레벨"
+    },
+    root_yn: {
+      type: DataTypes.STRING(1),
+      allowNull: true,
+      defaultValue: "N"
     }
   }, {
     sequelize,
