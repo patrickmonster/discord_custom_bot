@@ -2,24 +2,14 @@
 const [idx, log_level ,name] = process.argv.slice(2);
 
 const { Client, Intents } = require('discord.js');
-// const {} = require('discord.js/src/client/actions/GuildStickersUpdate');
 
 const { sequelize } = require("#models");
-
-const getCommands = require('./lib/getCommands'); // 커맨드 관리자
-
-const messageCreate = require('#event/messageCreate');
-const clickButton = require('#event/clickButton');
-const clickMenu = require('#event/clickMenu');
-
-const guildCreate = require('#event/guildCreate');
-const guildDelete = require('#event/guildDelete');
-
-
+const getCommands = require('#lib/getCommands'); // 커맨드 관리자
 const logger = require('#lib/logger');
+
 logger.setName(name);
 logger.setLevel(Object.keys(logger.levels)[log_level]);
-logger.log(`샤드 초기화 : ${log_level}`);
+logger.log(`샤드 초기화 : ${idx}/${log_level}`);
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,6 +18,10 @@ function getQuery(type = "SELECT", query, ...replacements){
 	return sequelize.query(`${type} ${query}`, { replacements, type: sequelize.QueryTypes[type] });
 }
 
+/**
+ * 디버깅
+ * @param {*} info 
+ */
 function debug(info) {
 	if (info.includes('Exceeded identify threshold')) {
 		const time = info.split(' ').pop();
@@ -39,17 +33,29 @@ function debug(info) {
 	}
 }
 
+/**
+ * 접속
+ */
 function ready(){
 	logger.log(`starting live service....`);
 	logger.log(`Logged in as ${client.user.tag}!`);
-	logger.log(`${client.guilds.cache.size}개의 그룹과 함께`);
+	logger.log(`${client.guilds.cache.size}개의 길드에 접속중`);
 
 }
 
+/**
+ * 명령처리
+ * @param {*} interaction 
+ * @returns 
+ */
 function interaction(interaction) {
 	if (!interaction.inGuild()) return;
-	if(interaction.isButton()) clickButton(interaction);
-	if(interaction.isSelectMenu()) clickMenu(interaction);
+	if(interaction.isButton()) {
+		
+	};
+	if(interaction.isSelectMenu()){
+		
+	};
 }
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,11 +71,12 @@ let client;
 getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	const intents = intent_s.map(({name})=>Intents.FLAGS[name]);
 
-	logger.debug(`샤드가 인텐트 조회에 성공하였습니다(${intents.length}) ${intents.join(", ")}`);
+	logger.debug(`Join intent... Success! (${intents.length}) ${intents.join(", ")}`);
 	client = new Client({ intents });
 
 	client.logger = logger;
 
+	// 관리봇 전용 커맨드
 	if(idx >= 2)
 		client.system_cmd = getCommands(`${__dirname}/command/system`);
 	client.resetCompCmd = require('#home/init')(client);
@@ -87,15 +94,12 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	client._getQuery = getQuery;
 	client._getQueryS = getQuerySelect;
 	client._idx = idx;
-
-
-	logger.log(`샤드가 인텐트 및 초기화에 성공하였습니다.`);
-	return getQuerySelect("name FROM dbtwitch.recvie_event WHERE idx = ?", idx);
+	return getQuerySelect("name FROM dbtwitch.recvie_event WHERE idx = ?", idx); // 이벤트 데이터 조회
 	// return client.login(process.env.DISCORD_TOKEN);
 }).then(event_s=>{
 	const events = event_s.map(({name})=>name).filter(i=>!exception_event.includes(i));
 	
-	logger.debug(`샤드가 이벤트 조회에 성공하였습니다(${events.length}) ${events.join(", ")}`);
+	logger.debug(`Getting discord client events! ${events.length}) ${events.join(", ")}`);
 	
 	for (const event of events)
 		client.on(event, (p1, p2)=>{
@@ -111,10 +115,48 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 			*/
 		});
 
-	logger.log(`샤드가 이벤트를 추가하였습니다.`);
+	logger.log(`Add events success!`);
 	return client.login(process.env.DISCORD_TOKEN);
-}).then(o=>{
-	logger.log(`샤드에서 봇이 성공적으로 연결되었습니다.`);
+}).then(_=>{
+	logger.log(`Shard connect by discord service`);
+	return getQuerySelect("name, description, command, default_permission, `type`, parent_idx, use_cmd, option_type, update_at, register_id FROM dbtwitch.recvie_command WHERE owner_idx = ? AND use_yn = 'Y'", idx); // 이벤트 데이터 조회
+}).then(commands=>{
+	logger.debug(`Getting discord interaction commands...(${commands.length})`);
+
+	for (const {idx : i,name, description, command, default_permission, type, parent_idx, use_cmd, option_type, update_at, register_id} of commands){
+		const commandObject = {
+			name, description, default_permission, type, parent_idx, use_cmd,option_type, register_id,
+			subcommand : {}, // 하위 명령
+			script : eval(command.startsWith("function") ? command : `function({ 
+				client, channelId, guild, member, message,
+				deferReply, deferUpdate, deleteReply, editReply, followUp, reply, update
+			}){${command}}`),// 스크립트 해석
+			exec({ 
+				client, channelId, guild, member, message,
+				deferReply, deferUpdate, deleteReply, editReply, followUp, reply, update
+			}, [command, ...args]){
+				client.logger.debug(`${user.tag}]${name}(${command}) - ${args,join(",")}`);
+				this.script({
+					client, channelId, guild, member, message,
+					deferReply, deferUpdate, deleteReply, editReply, followUp, reply, update
+				});// 커맨드 명령 실행
+				if(args.length){// 하위 명령 실행
+					const sub = subcommand[args[0]];
+					if(sub){
+						sub.exec({ 
+							client, channelId, guild, member, message,
+							deferReply, deferUpdate, deleteReply, editReply, followUp, reply, update
+						},...args);//
+					}
+				}
+			}// 실행명령
+		};
+		if(!register_id){
+			// 등록이 되지 않은 명령 (명령실행ㄴ)
+		}
+		logger.debug(`${i}:[${update_at}]${name}(${description}) - ${["", "명령", "사용자", "메세지"][type]}명령을 불러옴`);
+	}
+	logger.log(`Success commands!`);
 }).catch(e=>{
 	logger.error(`샤드가 이벤트를 추가하는 도중, 오류가 발생하였습니다.`, e);
 });
