@@ -98,7 +98,6 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 	// return client.login(process.env.DISCORD_TOKEN);
 }).then(event_s=>{
 	const events = event_s.map(({name})=>name).filter(i=>!exception_event.includes(i));
-	
 	logger.debug(`Getting discord client events! ${events.length}) ${events.join(", ")}`);
 	
 	for (const event of events)
@@ -109,8 +108,6 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 				GuildEmoji, GuildBan, Guild, GuildMember, GuildChannel,
 				Interaction, Invite, Message, Collection<Snowflake, Message>, MessageReaction,
 				Role
-
-
 			invalidRequestWarning -> 사용자 과실
 			*/
 		});
