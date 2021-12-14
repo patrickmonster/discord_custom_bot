@@ -35,6 +35,11 @@ function load(client, target) {
 	}
 }
 
+/**
+ * 샤드 IPC이벤트 동기화 용도
+ * @param {*} client 
+ * @returns 
+ */
 module.exports = function(client) {
 	const commandFolders = fs.readdirSync(target).filter(file => file.endsWith('.js'));
 	for (const file of commandFolders) {

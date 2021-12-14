@@ -13,8 +13,9 @@ module.exports = function(sequelize, DataTypes) {
       comment: "토큰"
     },
     owner: {
-      type: DataTypes.INTEGER,
-      allowNull: true
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: "소유자"
     },
     memo: {
       type: DataTypes.STRING(100),
