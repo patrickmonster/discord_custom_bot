@@ -1,13 +1,3 @@
-const { MessageMentions: { USERS_PATTERN } } = require('discord.js');
-
-function getUserFromMention(mention) {
-	const matches = mention.match(USERS_PATTERN);
-	if (!matches) return;
-	const id = matches[1];
-
-	return client.users.cache.get(id);
-}
-
 module.exports = function(message) {
 	const { content, guild, author, client, channel, mentions } = message;
 	const [mm, command, ...args] = content.split(' ');
@@ -24,7 +14,7 @@ module.exports = function(message) {
 
 	// 명령어 기록
 	client.getQuery(
-		"INSERT", "INTO dbtwitch.command_log (guild, channel, `user`, command, `type`) VALUES(?, ?, ?, ?, 'T')",
+		"INSERT", "INTO command_log (guild, channel, `user`, command, `type`) VALUES(?, ?, ?, ?, 'T')",
 		channel.type == 'dm' ? "DM" : `${guild.id}`,
 		`${channel.id}`,
 		`${author.id}`,

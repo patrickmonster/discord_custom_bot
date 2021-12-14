@@ -69,7 +69,7 @@ const exception_event = [
 let client; // 구동 클라이언트
 let g_token;
 
-getQuerySelect("idx, token, owner, tag, log_level FROM dbtwitch.token WHERE use_yn = 'Y' AND idx = ?", idx).then(([{idx, token, owner, tag, log_level}])=>{
+getQuerySelect("idx, token, owner, tag, log_level FROM token WHERE use_yn = 'Y' AND idx = ?", idx).then(([{idx, token, owner, tag, log_level}])=>{
 	g_token = token;
 	logger.setName(tag);
 	logger.setLevel(Object.keys(logger.levels)[log_level]);
@@ -102,7 +102,7 @@ getQuerySelect("idx, token, owner, tag, log_level FROM dbtwitch.token WHERE use_
 	client._getQuery = getQuery;
 	client._getQueryS = getQuerySelect;
 	client._idx = idx;
-	return getQuerySelect("name FROM dbtwitch.recvie_event WHERE idx = ?", idx); // 이벤트 데이터 조회
+	return getQuerySelect("name FROM recvie_event WHERE idx = ?", idx); // 이벤트 데이터 조회
 }).then(event_s=>{ // 이벤트 조회
 
 	const events = event_s.map(({name})=>name).filter(i=>exception_event.includes(i));
@@ -138,7 +138,7 @@ getQuerySelect("idx, token, owner, tag, log_level FROM dbtwitch.token WHERE use_
 
 메세지 불러오는 컴포넌트
 
-	return getQuerySelect("name, description, command, default_permission, `type`, parent_idx, use_cmd, option_type, update_at, register_id FROM dbtwitch.recvie_command WHERE owner_idx = ? AND use_yn = 'Y'", idx); // 이벤트 데이터 조회
+	return getQuerySelect("name, description, command, default_permission, `type`, parent_idx, use_cmd, option_type, update_at, register_id FROM recvie_command WHERE owner_idx = ? AND use_yn = 'Y'", idx); // 이벤트 데이터 조회
 }).then(commands=>{
 	logger.debug(`Getting discord interaction commands...(${commands.length})`);
 
