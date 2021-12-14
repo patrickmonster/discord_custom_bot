@@ -1,10 +1,12 @@
 require('dotenv').config();
 const { ShardingManager } = require('discord.js');
+
+const [cmd] = process.argv.slice(2);
 const setting = require('./package.json');
 
 const logger = require('#lib/logger');
 
-const { sequelize } = require("#models")
+const { sequelize } = require("#models");
 // process.setMaxListeners(0);
 
 console.log(`
@@ -62,15 +64,13 @@ sequelize.query(`SELECT * FROM token WHERE use_yn = 'Y'`, {type: sequelize.Query
 }).catch(e=>{ // sql 에러
     console.log(e);
     // 테이블 동기화
-    console.log(`SQL] sql table makeing...`);
-    sequelize.sync().then(data=>{
-        console.log(`SQL] Database init sync talbe`);
-        console.log(data);
-        console.log(`
-SQL] 데이터베이스 동기화가 완료되었습니다!
-Token 테이블에 사용자 정보를 입력하여 주세요!
-        `);
-    }).catch(console.error);
+    sequelize.getTableList().then(_=>{
+        console.log(`SQL] 데이터베이스 매칭이 완료되었습니다. - 다시 실행해 주세요.`);
+        process.exit(-1)
+    }).catch(e=>{
+        console.log(`SQL] 데이터베이스 연결에 실패하였습니다. - 데이터베이스를 확인해 주세요.`);
+        process.exit(-1)
+    });
 });
 
 
