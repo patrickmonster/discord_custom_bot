@@ -1,5 +1,5 @@
 'use strict';
-const [idx, log_level ,name] = process.argv.slice(2);
+const [idx] = process.argv.slice(2);
 
 const { Client, Intents } = require('discord.js');
 
@@ -7,15 +7,13 @@ const { sequelize } = require("#models");
 const getCommands = require('#lib/getCommands'); // 커맨드 관리자
 const logger = require('#lib/logger');
 
-logger.setName(name);
-logger.setLevel(Object.keys(logger.levels)[log_level]);
-logger.log(`샤드 초기화 : ${idx}/${log_level}`);
-
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
 function getQuerySelect(query, ...replacements) { return getQuery("SELECT", query, ...replacements)}
 function getQuery(type = "SELECT", query, ...replacements){
-	return sequelize.query(`${type} ${query}`, { replacements, type: sequelize.QueryTypes[type] });
+	const q = `${type} ${query}`;
+	logger.debug(q);
+	return sequelize.query(q, { replacements, type: sequelize.QueryTypes[type] });
 }
 
 /**
@@ -37,6 +35,7 @@ function debug(info) {
  * 접속
  */
 function ready(){
+	logger.setName(client.user.tag);
 	logger.log(`starting live service....`);
 	logger.log(`Logged in as ${client.user.tag}!`);
 	logger.log(`${client.guilds.cache.size}개의 길드에 접속중`);
@@ -58,17 +57,26 @@ function interaction(interaction) {
 	};
 }
 // ////////////////////////////////////////////////////////////////////////////////////////////////
+// "debug", "error", "ready", "shardError", "interactionCreate","presenceUpdate",
+// "rateLimit", "shardReconnecting","shardResume","stageInstanceCreate",
+// "stageInstanceDelete",
 
+// 허용 이벤트
 const exception_event = [
-	"debug", "error", "ready", "shardError", "interactionCreate","presenceUpdate",
-	"rateLimit", "shardReconnecting","shardResume","stageInstanceCreate",
-	"stageInstanceDelete",
+	"guildCreate", "guildDelete",
 ];
 
-let client;
+let client; // 구동 클라이언트
+let g_token;
 
-// process.argv.slice(2)
-getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
+getQuerySelect("idx, token, owner, tag, log_level FROM dbtwitch.token WHERE use_yn = 'Y' AND idx = ?", idx).then(([{idx, token, owner, tag, log_level}])=>{
+	g_token = token;
+	logger.setName(tag);
+	logger.setLevel(Object.keys(logger.levels)[log_level]);
+	logger.log(`샤드 초기화 : ${idx}/${log_level}`);
+
+	return getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx);
+}).then(intent_s=>{
 	const intents = intent_s.map(({name})=>Intents.FLAGS[name]);
 
 	logger.debug(`Join intent... Success! (${intents.length}) ${intents.join(", ")}`);
@@ -81,41 +89,55 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 		client.system_cmd = getCommands(`${__dirname}/command/system`);
 	client.resetCompCmd = require('#home/init')(client);
 	
-	client.on('shardError', require('#event/shardError'));
-	client.on('interactionCreate', interaction);
 
 	client.on('debug', debug);
 	client.on('ready', ready);
 	
-	// client.on('messageCreate', messageCreate);
-	// client.on('guildCreate', guildCreate);
-	// client.on('guildDelete', guildDelete);
+	// 기본 운용에 필요한 서비스
+	
+	client.on('interactionCreate', interaction);
+	client.on('shardError', require('#event/shardError'));
+	client.on('messageCreate', require("#event/messageCreate"));
 
 	client._getQuery = getQuery;
 	client._getQueryS = getQuerySelect;
 	client._idx = idx;
 	return getQuerySelect("name FROM dbtwitch.recvie_event WHERE idx = ?", idx); // 이벤트 데이터 조회
-	// return client.login(process.env.DISCORD_TOKEN);
-}).then(event_s=>{
-	const events = event_s.map(({name})=>name).filter(i=>!exception_event.includes(i));
+}).then(event_s=>{ // 이벤트 조회
+
+	const events = event_s.map(({name})=>name).filter(i=>exception_event.includes(i));
 	logger.debug(`Getting discord client events! ${events.length}) ${events.join(", ")}`);
 	
 	for (const event of events)
-		client.on(event, (p1, p2)=>{
-			/*
-			p1 : APIRequest, ApplicationCommand, 
-				DMChannel, TextBasedChannels, 
-				GuildEmoji, GuildBan, Guild, GuildMember, GuildChannel,
-				Interaction, Invite, Message, Collection<Snowflake, Message>, MessageReaction,
-				Role
-			invalidRequestWarning -> 사용자 과실
-			*/
-		});
+		client.on(event, require(`#event/${event}`));
 
 	logger.log(`Add events success!`);
-	return client.login(process.env.DISCORD_TOKEN);
+	return client.login(g_token);
 }).then(_=>{
 	logger.log(`Shard connect by discord service`);
+}).catch(e=>{
+	logger.error(`샤드가 이벤트를 추가하는 도중, 오류가 발생하였습니다.`, e);
+});
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+이벤트 등록
+{
+	idx : ""
+	name : "경로",
+	description : "설명",
+	optionType : "subcommand" | "boolean" | "user" | "channel" | "rule" | "mention" | "string" | "int" | "number",
+	use_yn : "Y", // 사용여부
+	use_cmd : "Y", // 커맨드 명령?
+	parent_idx : "", // 부모요소
+	exec(){// 실행명령
+
+	}
+}
+
+
+메세지 불러오는 컴포넌트
+
 	return getQuerySelect("name, description, command, default_permission, `type`, parent_idx, use_cmd, option_type, update_at, register_id FROM dbtwitch.recvie_command WHERE owner_idx = ? AND use_yn = 'Y'", idx); // 이벤트 데이터 조회
 }).then(commands=>{
 	logger.debug(`Getting discord interaction commands...(${commands.length})`);
@@ -154,23 +176,4 @@ getQuerySelect("name FROM recvie_intent WHERE idx = ?", idx).then(intent_s=>{
 		logger.debug(`${i}:[${update_at}]${name}(${description}) - ${["", "명령", "사용자", "메세지"][type]}명령을 불러옴`);
 	}
 	logger.log(`Success commands!`);
-}).catch(e=>{
-	logger.error(`샤드가 이벤트를 추가하는 도중, 오류가 발생하였습니다.`, e);
-});
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-이벤트 등록
-{
-	idx : ""
-	name : "경로",
-	description : "설명",
-	optionType : "subcommand" | "boolean" | "user" | "channel" | "rule" | "mention" | "string" | "int" | "number",
-	use_yn : "Y", // 사용여부
-	use_cmd : "Y", // 커맨드 명령?
-	parent_idx : "", // 부모요소
-	exec(){// 실행명령
-
-	}
-}
 */

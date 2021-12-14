@@ -1,18 +1,43 @@
-// const { sequelize } = require("#models");
+const { MessageMentions: { USERS_PATTERN } } = require('discord.js');
+
+function getUserFromMention(mention) {
+	const matches = mention.match(USERS_PATTERN);
+	if (!matches) return;
+	const id = matches[1];
+
+	return client.users.cache.get(id);
+}
 
 module.exports = function(message) {
-	const { content, author, client, channel } = message;
-	const [commend, ...args] = content.split(' ');
-	if (!channel.isText() || author.bot) return;
+	const { content, guild, author, client, channel, mentions } = message;
+	const [mm, command, ...args] = content.split(' ');
+	// 텍스트메세지, 봇아님, 맨션 메세지
+	if (!channel.isText() || author.bot || !mentions.users.has(client.user.id)) return;
 	// ///////////////////////////////////////////////////////////////////////////////////////////
-	if (client.witelist.includes(author.id) && content.startsWith('🔑')) {//관리용 명령어
-		return client.system_cmd?.get(commend)?.execute(message, args);
-	}else{
-		// client.system_message?.get(command)?.execute()
-		// eval() -> 실행문 삽입
-		// client._getQuery("SELECT","")
-	}
-};
 
+	if(!new RegExp(`/<@!?${client.user.id}>/g`).test(mm)){// 멘션여부 확인
+		message.reply(`메세지 구분이 틀렸습니다. ${client.user} [명령문] [명령 매개변수...]`);
+		return;
+	}else{
+		
+	}
+
+	// 명령어 기록
+	client.getQuery(
+		"INSERT", "INTO dbtwitch.command_log (guild, channel, `user`, command, `type`) VALUES(?, ?, ?, ?, 'T')",
+		channel.type == 'dm' ? "DM" : `${guild.id}`,
+		`${channel.id}`,
+		`${author.id}`,
+		[ command, ...args].join(" ")
+	);
+};
 /*
+메세지 타입
+	T : 텍스트(맨션)
+	B : 버튼
+	M: 매뉴
+	A : 어플리케이션
+	O : AutoComplete
+	C : 커맨드
+	P : 메세지 컴포넌트
 */
