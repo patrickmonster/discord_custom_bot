@@ -1,4 +1,4 @@
-const db = require("#models");
+require('dotenv').config();
+const { sequelize } = require("#models");
 
 
-console.log(db);

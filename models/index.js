@@ -3,7 +3,6 @@ const Sequelize = require('sequelize');
 const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.json')[env];
 
-console.log(env, config);
 let sequelize;
 if(env == "production"){
   sequelize = new Sequelize(config);
@@ -15,7 +14,31 @@ if(env == "production"){
 
 const db = require(__dirname + "/init-models")(sequelize, Sequelize.DataTypes);
 
+
+db.tableList = Object.keys(db);
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+db.getTableList = () =>{
+    switch (sequelize.options.dialect) {
+        case "sqlite":
+            return sequelize.query(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`, { type: sequelize.QueryTypes.SELECT });
+        default:
+            return sequelize.query('SHOW Tables', { type: sequelize.QueryTypes.SHOWTABLES });
+    }
+}
+
+db.getTableList().then(tables=>{
+  const other1 = db.tableList.filter(x => !tables.includes(x)).length;
+  const other2 = tables.filter(x => !db.tableList.includes(x)).length;
+
+  if(other1 && other2){// 둘다 다름
+    throw new Error(`[데이터베이스] 매칭에러 - 서버&클라이언트 양쪽 데이터베이스와 일치하지 않습니다!`);
+  }else if(other1 + other2){// 
+    throw new Error(`[데이터베이스] 매칭에러 - ${other1 ? '서버' : '클라이언트'}측 데이터베이스와 일치하지 않습니다!`);
+  }
+}).catch(e=>{
+  console.error(e);
+  process.exit(-1);
+});
 
 module.exports = db;

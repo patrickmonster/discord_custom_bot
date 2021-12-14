@@ -57,9 +57,6 @@ function interaction(interaction) {
 	};
 }
 // ////////////////////////////////////////////////////////////////////////////////////////////////
-// "debug", "error", "ready", "shardError", "interactionCreate","presenceUpdate",
-// "rateLimit", "shardReconnecting","shardResume","stageInstanceCreate",
-// "stageInstanceDelete",
 
 // 허용 이벤트
 const exception_event = [
