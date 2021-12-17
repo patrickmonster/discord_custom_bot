@@ -65,8 +65,6 @@ sequelize.query(`SELECT * FROM token WHERE use_yn = 'Y'`, {type: sequelize.Query
     else{
         const readline = require("readline");
         console.log(`SQL] 데이터베이스에 봇이 정의되어있지 않습니다!`);
-        
-
     }
 }).catch(e=>{ // sql 에러
     console.log(e);

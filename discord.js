@@ -53,12 +53,8 @@ function ready(){
  */
 function interaction(interaction) {
 	if (!interaction.inGuild()) return;
-	if(interaction.isButton()) {
-		
-	};
-	if(interaction.isSelectMenu()){
-		
-	};
+	if(interaction.isButton()) { }
+	if(interaction.isSelectMenu()){ }
 }
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -86,8 +82,7 @@ getQuerySelect("idx, token, owner, tag, log_level FROM token WHERE use_yn = 'Y' 
 	client.logger = logger;
 
 	// 관리봇 전용 커맨드
-	if(idx >= 2)
-		client.system_cmd = getCommands(`${__dirname}/command/system`);
+	// client.system_cmd = getCommands(`${__dirname}/command/system`);
 	client.resetCompCmd = require('#home/init')(client);
 	
 
@@ -96,7 +91,7 @@ getQuerySelect("idx, token, owner, tag, log_level FROM token WHERE use_yn = 'Y' 
 	
 	// 기본 운용에 필요한 서비스
 	
-	client.on('interactionCreate', interaction);
+	client.on('interactionCreate', interaction); 
 	client.on('shardError', require('#event/shardError'));
 	client.on('messageCreate', require("#event/messageCreate"));
 
