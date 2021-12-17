@@ -1,13 +1,13 @@
 require('dotenv').config();
 const { ShardingManager } = require('discord.js');
 
-const [cmd] = process.argv.slice(2);
+// const [cmd] = process.argv.slice(2);
 const setting = require('./package.json');
 
-const logger = require('#lib/logger');
-
-const { sequelize } = require("#models");
+const { sequelize, getTableList } = require("#models");
 // process.setMaxListeners(0);
+
+const readline = require("readline");
 
 console.log(`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -53,24 +53,46 @@ function createShard({ idx, token, owner, memo, tag, log_level }){// 샤드 인�
 
 
 const manager_list = {};
-sequelize.query(`SELECT * FROM token WHERE use_yn = 'Y'`, {type: sequelize.QueryTypes.SELECT}).then((bots)=>{
-    for (const bot of bots){
-        try{
-            manager_list[bot.idx] = createShard(bot);
-        }catch(_){
-            console.log(`${idx}] 샤드생성 에러`);
+sequelize.query(`SELECT * FROM token WHERE use_yn = 'Y'`, {type: sequelize.QueryTypes.SELECT}).then(bots=>{
+    if(bots.length)
+        for (const bot of bots){
+            try{
+                manager_list[bot.idx] = createShard(bot);
+            }catch(_){
+                console.log(`${idx}] 샤드생성 에러`);
+            }
         }
+    else{
+        const readline = require("readline");
+        console.log(`SQL] 데이터베이스에 봇이 정의되어있지 않습니다!`);
+        
+
     }
 }).catch(e=>{ // sql 에러
     console.log(e);
     // 테이블 동기화
-    sequelize.getTableList().then(_=>{
-        console.log(`SQL] 데이터베이스 매칭이 완료되었습니다. - 다시 실행해 주세요.`);
+    getTableList().then(list=>{
+        if(list.includes("token")){
+            const readline = require("readline");
+            console.log(`SQL] 데이터베이스에 봇 정보가 없습니다!`);
+            console.log(`SQL] 봇의 토큰을 입력해 주세요 >`);
+
+        }else{
+            console.log(`SQL] 새로운 데이터베이스 입니다.`);
+            console.log(`SQL] 데이터베이스를 동기화 합니다.`);
+        }
         process.exit(-1)
     }).catch(e=>{
         console.log(`SQL] 데이터베이스 연결에 실패하였습니다. - 데이터베이스를 확인해 주세요.`);
         process.exit(-1)
     });
+});
+
+rl.on("line", function(line) {
+    console.log("hello !", line);
+    rl.close();
+}).on("close", function() {
+    process.exit();
 });
 
 

@@ -46,19 +46,14 @@ db.getTableList().then(tables=>{
   }
 }).catch(e=>{
   if(cmd == "sync"){
-    console.log(`SQL] 데이터베이스 매칭모드 - 서버 위주`);
+    console.log(`SQL] 데이터베이스 매칭모드 - 클라이언트 위주`);
     sequelize.sync().then(data=>{
       console.log(`SQL] Database init sync talbe`);
-      console.log(`SQL] 데이터베이스 동기화가 완료되었습니다!()`);
+      console.log(`SQL] 데이터베이스 동기화가 완료되었습니다!`);
     }).catch(console.error);
   }else{
-    console.info(e);
-    console.log(`
-'npm run db'명령을 실행하여 주세요(서버 테이블과 매칭합니다.
-클라이언트 위주로 매칭하시려면 
-    `);
+    console.log(`SQL]`, e);
   }
-  process.exit(-1);
 });
 
 

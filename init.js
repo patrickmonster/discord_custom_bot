@@ -67,5 +67,5 @@ module.exports = function(client) {
 				console.log(`[파일관리자] 파일제거(경고)- ${target}`);
 			}
 		}
-	};
+	};  
 };

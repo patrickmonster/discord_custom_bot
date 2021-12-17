@@ -35,7 +35,11 @@ function debug(info) {
  * 접속
  */
 function ready(){
-	logger.setName(client.user.tag);
+	if(logger.getName() != client.user.tag){
+		getQuery("UPDATE", "dbtwitch.token SET tag=? WHERE idx=?;", client.user.tag, idx);
+		logger.setName(client.user.tag);
+		logger.log(`사용자 정보가 업데이트 되었습니다.`);
+	}
 	logger.log(`starting live service....`);
 	logger.log(`Logged in as ${client.user.tag}!`);
 	logger.log(`${client.guilds.cache.size}개의 길드에 접속중`);
